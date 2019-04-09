@@ -1,6 +1,6 @@
 CC=gcc -std=c99
 HEAD=header.h
-FLAGS=-lSDL2 -Wall -Wextra -g
+FLAGS=-lSDL2 -lm -Wall -Wextra -g
 CFLAGS=-lSDL2_ttf -lSDL2_mixer
 
 
@@ -17,7 +17,7 @@ menu.o	:	menu.c
 
 
 server	:	server.o server.h $(HEAD)
-		$(CC) $(FLAGS) -lm $^ -o $@
+		$(CC) $(FLAGS) $^ -o $@
 
 server.o:	server.c
 		$(CC) -c $^

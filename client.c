@@ -148,11 +148,12 @@ int main( int argc, char **argv ) {
 	uint32_t pix = 0xaaaaaaaa;
 	srand(time(NULL));
 
-	for( int i = 0; argv[1][i]; i++ )
+	int i;
+	for( i = 0; argv[1][i]; i++ )
 		full_addr[i] = argv[1][i];
-	full_addr[sizeof( argv[1] ) + 1] = ':';
-	for( int i = 0; argv[2][i]; i++ )
-		full_addr[i + sizeof( argv[1] ) + 2] = argv[2][i];
+	full_addr[i] = ':';
+	for( int j = 0; argv[2][j]; j++ )
+		full_addr[j + i + 1] = argv[2][j];
 
 
 	SDL_Init( SDL_INIT_VIDEO | SDL_INIT_TIMER );
@@ -163,7 +164,7 @@ int main( int argc, char **argv ) {
 	SDL_Renderer *renderer = SDL_CreateRenderer( win, -1, SDL_RENDERER_ACCELERATED );
 
 
-	menuMain( renderer );
+	//menuMain( renderer );
 
 
 	SDL_Texture *texture = SDL_CreateTexture( renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, LEVEL_WIDTH, LEVEL_HEIGHT );

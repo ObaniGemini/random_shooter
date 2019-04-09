@@ -127,7 +127,8 @@ void playerShoot( int player, uint8_t dir ) {
 /* Spawn powerup */
 uint itemSpawn( uint id, void *data ) { /* These arguments are useless, needed for the SDL_Timer callback */
 	for( int i = 0; i < MAX_PLAYERS; i++ )
-		player_states[i] = STATE_NORMAL;
+		if( player_states[i] != STATE_DEAD ) /* prevent players from not respawning if item spawns */
+			player_states[i] = STATE_NORMAL;
 
 	ents[MAX_PLAYERS].x = rand() % LEVEL_WIDTH;
 	ents[MAX_PLAYERS].y = rand() % LEVEL_HEIGHT;
@@ -166,20 +167,8 @@ void sendData() {
 
 
 /* Handle incoming data and init serv connection */
-int handleDataIn( void *port ) {
-	sockaddr_in sv_addr;
-
-	memset((char *) &sv_addr, 0, sizeof(sv_addr));
-	sv_addr.sin_family		= AF_INET;
-	sv_addr.sin_port		= htons( *(int *)(port) );
-	sv_addr.sin_addr.s_addr	= INADDR_ANY;
-	memset( sv_addr.sin_zero, 0, sizeof( sv_addr.sin_zero ) );
-
-	if( (clients = socket( AF_INET, SOCK_DGRAM, IPPROTO_UDP )) < 0 )
-		error("socket");
-
-	if( bind( clients, (struct sockaddr *)&sv_addr, sizeof( sv_addr ) ) < 0 )
-		error("bind");
+int handleDataIn( void *addr ) {
+	sockaddr_in sv_addr = *(struct sockaddr_in *)addr;
 
 	for(;;) {
 		sockaddr_in tmp;
@@ -218,9 +207,22 @@ int main( int argc, char **argv ) {
 		return 1;
 	}
 
-	int port = atoi(argv[1]);
-	clock_t t1 = clock(), t2;
+	sockaddr_in sv_addr;
 
+	if( (clients = socket( AF_INET, SOCK_DGRAM, IPPROTO_UDP )) < 0 )
+		error("socket");
+
+	memset((char *) &sv_addr, 0, sizeof(sv_addr));
+	sv_addr.sin_family		= AF_INET;
+	sv_addr.sin_port		= htons( atoi(argv[1]) );
+	sv_addr.sin_addr.s_addr	= htonl(INADDR_ANY);
+	//memset( sv_addr.sin_zero, 0, sizeof( sv_addr.sin_zero ) );
+
+	if( bind( clients, (struct sockaddr *)&sv_addr, sizeof( sv_addr ) ) < 0 )
+		error("bind");
+
+
+	clock_t t1 = clock(), t2;
 	for( int i = 0; i < MAX_PLAYERS; i++ ) {
 		pt_addr[i] = NULL;
 	}
@@ -228,9 +230,10 @@ int main( int argc, char **argv ) {
 		ents[i].hp = 0; ents[i].dirX = 0; ents[i].dirY = 0;
 	}
 
+
 	SDL_Init( SDL_INIT_TIMER );
 	SDL_AddTimer( 15000, itemSpawn, NULL );
-	SDL_CreateThread( handleDataIn, "handleDataIn", (void *)(&port) );
+	SDL_CreateThread( handleDataIn, "handleDataIn", (void *)(&sv_addr) );
 	signal(2, leave);
 
 

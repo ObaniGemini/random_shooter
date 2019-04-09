@@ -39,18 +39,17 @@ void menuMain( SDL_Renderer *renderer ) {
 	const int X = SCREEN_WIDTH/8;
 	SDL_Event e;
 	clock_t t1 = clock(), t2;
-	clock_t t3 = clock(), t4;
 
 	for( int i = 0; i < BACKGROUND_PIX; i++ )
-		background[i] = ( 75 + rand() % 75 ) | (( 75 + rand() % 75 ) << 8) | (( 75 + rand() % 75 ) << 16) | (255 << 24);
+		background[i] = ( 75 + rand() % 100 ) | (( 75 + rand() % 100 ) << 8) | (( 75 + rand() % 100 ) << 16) | (255 << 24);
 
 	for(;;) {
 		t2 = clock();
 		if( (double)(t2 - t1) / CLOCKS_PER_SEC >= 0.025 ) {
 			t1 = t2;
-			background[rand() % BACKGROUND_PIX] = ( 75 + rand() % 75 ) | (( 75 + rand() % 75 ) << 8) | (( 75 + rand() % 75 ) << 16) | (255 << 24);
+			background[rand() % BACKGROUND_PIX] = ( 75 + rand() % 100 ) | (( 75 + rand() % 100 ) << 8) | (( 75 + rand() % 100 ) << 16) | (255 << 24);
 			for( int i = 0; i < BACKGROUND_PIX; i++ )
-				background[i]--;
+				background[i] -= 1 | ( 1 << 8 )  | ( 1 << 16 );
 		}
 
 
@@ -59,7 +58,7 @@ void menuMain( SDL_Renderer *renderer ) {
 		}
 
 		SDL_UpdateTexture( bg_texture, NULL, background, bg_pix );
-		textureUpdate( renderer, bg_texture, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT );
+		textureUpdate( renderer, bg_texture, 0, 0, SCREEN_WIDTH*2 + cos((double)t2 / CLOCKS_PER_SEC)*SCREEN_WIDTH, SCREEN_HEIGHT );
 		textureUpdate( renderer, button_texture, X, 0, BUTTON_WIDTH, BUTTON_HEIGHT );
 		SDL_RenderPresent( renderer );
 	}
