@@ -16,8 +16,8 @@
 #define SCREEN_HEIGHT	720
 
 
-#define MAX_PLAYERS		2
-#define MAX_BULLETS		200
+#define MAX_PLAYERS		4
+#define MAX_BULLETS		120
 #define MAX_ENTITIES	(MAX_PLAYERS + 1 + MAX_BULLETS)
 
 

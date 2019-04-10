@@ -3,12 +3,12 @@
 #include <string.h>
 #include <signal.h>
 
-#define UPDATE_TIME 	0.015
+#define UPDATE_TIME 	0.015625
 
 enum {
 	STATE_DEAD 		= 1,
 	STATE_NORMAL 	= 2,
-	STATE_NEGEV		= 3,
+	STATE_SHOTGUN	= 3,
 };
 
 

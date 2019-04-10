@@ -7,7 +7,7 @@ ptsockaddr_in pt_addr[MAX_PLAYERS];
 
 Entity ents[MAX_ENTITIES];
 uint8_t events[MAX_PLAYERS*2];
-uint8_t player_states[MAX_PLAYERS];
+uint8_t player_states[MAX_PLAYERS] = { };
 
 
 /* Quit on signale 'n' (handles Ctrl+C) */
@@ -81,7 +81,7 @@ void updateStates() {
 				ents[b].hp = 0;
 				if( b == MAX_PLAYERS ) {
 					printf("Player %d picked up another gun !\n", p+1 );
-					player_states[p] = STATE_NEGEV;
+					player_states[p] = STATE_SHOTGUN;
 					SDL_AddTimer( 15000, itemSpawn, NULL );
 				} else {
 					ents[p].hp--;							/* If bullet and player have the same pos, kill bullet and decrement player hp */
@@ -105,7 +105,7 @@ void playerMove( int player, uint8_t dir ) {
 
 /* Spawn a bullet on empty location if player shoots */
 void playerShoot( int player, uint8_t dir ) {
-	int shots = player_states[player] == STATE_NEGEV ? 3 : 0; /* Useful for powerup */
+	int shots = 1; /* Useful for powerup */
 
 	if( !ents[player].hp ) return; /* don't shoot if player is dead */
 	if( (dir & DIR_UP && dir & DIR_DOWN) || (dir & DIR_LEFT && dir & DIR_RIGHT)) return; /* don't shoot if opposite directions */
@@ -113,12 +113,21 @@ void playerShoot( int player, uint8_t dir ) {
 	for( int i = MAX_PLAYERS + 1; i < MAX_ENTITIES; i++ ) {
 		if( ents[i].hp ) continue;
 
+
 		chooseDir( dir, &(ents[i].dirX), &(ents[i].dirY) );
-		ents[i].x = ents[player].x + ents[i].dirX - cos( shots * 3.14159/2 );
-		ents[i].y = ents[player].y + ents[i].dirY - sin( shots * 3.14159/2 );
+		if( player_states[player] == STATE_NORMAL ) {
+			ents[i].x = ents[player].x + ents[i].dirX;
+			ents[i].y = ents[player].y + ents[i].dirY;
+		} else if( ents[i].dirX && ents[i].dirY ) {
+			ents[i].x = ents[player].x + ents[i].dirX + shots*ents[i].dirX;
+			ents[i].y = ents[player].y + ents[i].dirY - shots*ents[i].dirY;
+		} else {
+			ents[i].x = ents[player].x + ents[i].dirX + shots*ents[i].dirY;
+			ents[i].y = ents[player].y + ents[i].dirY + shots*ents[i].dirX;
+		}
 		ents[i].hp = HP_BULLET;
 
-		if( shots-- == 0 )
+		if(player_states[player] != STATE_SHOTGUN || shots-- == -1 )
 			break;
 	}
 }
@@ -146,6 +155,7 @@ uint playerSpawn( uint id, void *data ) { /* These arguments are useless, needed
 		ents[i].x = rand() % LEVEL_WIDTH;
 		ents[i].y = rand() % LEVEL_HEIGHT;
 		ents[i].hp = HP_PLAYER;
+		player_states[i] = STATE_NORMAL;
 	}
 	return 0;
 }

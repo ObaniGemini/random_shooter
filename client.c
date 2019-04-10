@@ -30,7 +30,7 @@ void leave(char *str) {
 
 void initGame() {
 	for( int i = 0; i < MAX_ENTITIES; i++ )
-		ents[i].alive = 0;
+		ents[i].hp = 0;
 }
 
 
@@ -119,16 +119,16 @@ int handleDataIn( void *full_addr ) {
 			int len = recvfrom( server.fd, data, MAX_ENTITIES*4, 0, (struct sockaddr *)&sv_addr, &sv_addr_len );
 			for( int i = 0; i < len; i += 4 ) {
 				uint8_t entnum = data[i];
-				/*if( !ents[entnum].alive && data[i+1] ) {
+				/*if( !ents[entnum].hp && data[i+1] ) {
 					if( entnum < MAX_PLAYERS )
 						printf("Player %d spawning\n", entnum+1);
 					else
 						printf("Shooting\n");
 				}*/
-				if( ents[entnum].alive != data[i+1] ) {
+				if( ents[entnum].hp != data[i+1] ) {
 
 				}
-				ents[entnum].alive = data[i+1];
+				ents[entnum].hp = data[i+1];
 				ents[entnum].x = data[i+2];
 				ents[entnum].y = data[i+3];
 			}
@@ -164,7 +164,7 @@ int main( int argc, char **argv ) {
 	SDL_Renderer *renderer = SDL_CreateRenderer( win, -1, SDL_RENDERER_ACCELERATED );
 
 
-	//menuMain( renderer );
+	// menuMain( renderer );
 
 
 	SDL_Texture *texture = SDL_CreateTexture( renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, LEVEL_WIDTH, LEVEL_HEIGHT );
@@ -196,12 +196,12 @@ int main( int argc, char **argv ) {
 			level[i] = terrain[i];
 
 		for( int i = 0; i < MAX_ENTITIES; i++ )
-			if( ents[i].alive )
+			if( ents[i].hp )
 				level[(ents[i].x + ents[i].y*LEVEL_WIDTH)] = ( i > MAX_PLAYERS ?
-															 ( 55 + ents[i].alive/2 ) | ( ( 155 + ents[i].alive )  << 8 ) | ( ( 200 + ents[i].alive/2 ) << 16 ) | ( 255 << 24 ) :	//bullets color
+															 ( 55 + ents[i].hp/2 ) | ( ( 155 + ents[i].hp )  << 8 ) | ( ( 200 + ents[i].hp/2 ) << 16 ) | ( 255 << 24 ) :	//bullets color
 															 ( i == MAX_PLAYERS ? 
 															 ( rand() % 256 ) | ( ( rand() % 256 ) << 8 ) | ( ( rand() % 256 ) << 16 ) | ( 255 << 24 )	:	//shotgun color
-															 ( ents[i].alive*25 ) | ( ( ents[i].alive*25 ) << 8 ) | ( 255 << 16 ) | ( 255 << 24 ) ) );		//players color
+															 ( ents[i].hp*25 ) | ( ( ents[i].hp*25 ) << 8 ) | ( 255 << 16 ) | ( 255 << 24 ) ) );		//players color
 
 		if( events[0] || events[1] ) {
 			sendto( server.fd, events, 2, 0, (struct sockaddr *)&sv_addr, sv_addr_len );
