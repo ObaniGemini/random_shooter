@@ -8,6 +8,7 @@ ptsockaddr_in pt_addr[MAX_PLAYERS];
 Entity ents[MAX_ENTITIES];
 uint8_t events[MAX_PLAYERS*2];
 uint8_t player_states[MAX_PLAYERS] = { };
+uint8_t ping[MAX_PLAYERS] = { };
 
 
 /* Quit on signale 'n' (handles Ctrl+C) */
@@ -113,7 +114,6 @@ void playerShoot( int player, uint8_t dir ) {
 	for( int i = MAX_PLAYERS + 1; i < MAX_ENTITIES; i++ ) {
 		if( ents[i].hp ) continue;
 
-
 		chooseDir( dir, &(ents[i].dirX), &(ents[i].dirY) );
 		if( player_states[player] == STATE_NORMAL ) {
 			ents[i].x = ents[player].x + ents[i].dirX;
@@ -125,9 +125,10 @@ void playerShoot( int player, uint8_t dir ) {
 			ents[i].x = ents[player].x + ents[i].dirX + shots*ents[i].dirY;
 			ents[i].y = ents[player].y + ents[i].dirY + shots*ents[i].dirX;
 		}
+
 		ents[i].hp = HP_BULLET;
 
-		if(player_states[player] != STATE_SHOTGUN || shots-- == -1 )
+		if( player_states[player] != STATE_SHOTGUN || shots-- == -1 )
 			break;
 	}
 }
@@ -198,6 +199,8 @@ int handleDataIn( void *addr ) {
 				break;
 		}
 
+		ping[i] = 1;
+
 		for( int j = 0; j < len; j++ ) {
 			if( buffer[j] & QUIT ) {
 				printf(" -----------\nPlayer %d quit\n -----------\n", i+1);
@@ -209,6 +212,28 @@ int handleDataIn( void *addr ) {
 		}
 	}
 }
+
+
+
+int handlePing() {
+	clock_t timers[MAX_PLAYERS];
+	clock_t elapsed;
+
+	for(;;) {
+		elapsed = clock();
+		for( int i = 0; i < MAX_PLAYERS; i++ ) {
+			if( pt_addr[i] ) {
+				if( ping[i] ) {
+					timers[i] = elapsed;
+					ping[i] = 0;
+				} else if( (double)(elapsed - timer[i]) / CLOCKS_PER_SEC >= TIMEOUT/1000 ) {
+					pt_addr[i] = NULL;
+				}
+			}
+		}
+	}
+}
+
 
 
 int main( int argc, char **argv ) {
@@ -244,6 +269,7 @@ int main( int argc, char **argv ) {
 	SDL_Init( SDL_INIT_TIMER );
 	SDL_AddTimer( 15000, itemSpawn, NULL );
 	SDL_CreateThread( handleDataIn, "handleDataIn", (void *)(&sv_addr) );
+	SDL_CreateThread( handlePing, "handlePing", NULL );
 	signal(2, leave);
 
 

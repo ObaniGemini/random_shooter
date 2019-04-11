@@ -1,37 +1,28 @@
 #include "menu.h"
 
 
-void error( const char *error ) {
-	printf("%s\n", error);
-	exit(1);
-}
-
-void printrect(const SDL_Rect *rect) {
-	printf("%d %d %d %d\n", rect->x, rect->y, rect->w, rect->h);
-}
-
 void textureUpdate( SDL_Renderer *r, SDL_Texture *t, int x, int y, int w, int h ) {
 	SDL_Rect rect = { x, y, w, h };
 	SDL_RenderCopy( r, t, NULL, &rect );
+}
+
+void printrect( SDL_Rect *rect ) {
+	printf("%d %d %d %d\n", rect->x, rect->y, rect->w, rect->h);
 }
 
 
 
 SDL_Surface *CreateButton( const char *text, TTF_Font *fnt ) {
 	SDL_Surface *button = SDL_CreateRGBSurface( 0, BUTTON_WIDTH, BUTTON_HEIGHT, 32, 0x000000ff, 0x0000ff00, 0x00ff0000, 0xff000000 );
-	SDL_Surface *button2 = SDL_CreateRGBSurface( 0, BUTTON_WIDTH/2, BUTTON_HEIGHT/2, 32, 0x000000ff, 0x0000ff00, 0x00ff0000, 0xff000000 );
 	SDL_FillRect( button, NULL, SDL_MapRGB(button->format, 75, 75, 75) );
-	SDL_FillRect( button2, NULL, SDL_MapRGB(button->format, 0, 0, 75) );
 	SDL_Color white = { 255, 255, 255 };
 	SDL_Surface *label = TTF_RenderText_Solid( fnt, text, white );
-	printrect(&(label->clip_rect));
+
 	printrect(&(button->clip_rect));
-	if(!label)
-		error("no label");
+	printrect(&(label->clip_rect));
+
 	SDL_BlitSurface( label, NULL, button, NULL );
-	SDL_BlitSurface( button2, NULL, button, NULL );
 	SDL_FreeSurface( label );
-	SDL_FreeSurface( button2 );
 	return button;
 }
 
@@ -41,23 +32,18 @@ SDL_Surface *CreateButton( const char *text, TTF_Font *fnt ) {
 void menuMain( SDL_Renderer *renderer ) {
 	uint32_t background[BACKGROUND_PIX];
 
-	if(TTF_Init() == -1)
-		error("WOW IT'S NOT INITTTTTTED");
+	TTF_Init();
 	SDL_Delay( 20 );
 
 	TTF_Font *fnt_title = TTF_OpenFont("fnt/FreeSansBold.ttf", 32);
-	TTF_Font *fnt_button = TTF_OpenFont("fnt/FreeSans.ttf", 60);
-
-	if(!fnt_button)
-		error("no font");
+	TTF_Font *fnt_button = TTF_OpenFont("fnt/FreeSans.ttf", 48);
 
 	SDL_Surface *button = CreateButton( "yomanwhatsupngga", fnt_button );
 	SDL_Texture *button_texture = SDL_CreateTexture( renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STATIC, BUTTON_WIDTH, BUTTON_HEIGHT );
 	SDL_Texture *bg_texture = SDL_CreateTexture( renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, BACKGROUND_PIX, 1 );
 	SDL_UpdateTexture( button_texture, NULL, button->pixels, sizeof( button->pixels ) );
 
-	printf("%s\n", TTF_GetError());
-
+	
 	const size_t bg_pix = BACKGROUND_PIX * sizeof( uint32_t );
 	const int X = SCREEN_WIDTH/8;
 	SDL_Event e;
@@ -77,7 +63,7 @@ void menuMain( SDL_Renderer *renderer ) {
 
 
 		if ( SDL_PollEvent( &e ) ) {
-			if( e.type == SDL_QUIT )	exit(1);		//handle quitting program
+			if( e.type == SDL_QUIT || e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_ESCAPE )	exit(1);		//handle quitting program
 		}
 
 		SDL_UpdateTexture( bg_texture, NULL, background, bg_pix );

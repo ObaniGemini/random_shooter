@@ -8,8 +8,6 @@
 #define PLAYER_COLOR 0xffffffff
 #define BULLET_COLOR 0xffffd893
 #define BULLET_DELAY 0.28125
-#define TIMEOUT 30000
-
 
 typedef struct {
 	uint8_t x, y, hp;

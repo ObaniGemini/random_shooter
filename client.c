@@ -10,20 +10,16 @@ struct pollfd server;
 struct sockaddr_in sv_addr;  //addresse
 socklen_t sv_addr_len = sizeof( sv_addr );
 
+uint8_t quit = 0;
 
 
 void leave(char *str) {
 	if( str[0] )
 		perror(str);		//Send error if there's one
 
-	uint8_t quit = QUIT;
+	quit = QUIT;
 	sendto( server.fd, &quit, 1, 0, (struct sockaddr *)&sv_addr, sv_addr_len );
 	close( server.fd );
-
-	Mix_Quit(); //Quit SDL_mixer
-	SDL_Quit(); //Quit SDL
-	printf("\n-------------\n Client quit\n-------------\n");
-	exit(1);
 }
 
 
@@ -53,8 +49,13 @@ int handleInput() {
 	int can_shoot = 1;
 
 	for(;;){
+		if( quit ) return 0;
+
 		if ( SDL_PollEvent( &e ) ) {
-			if( e.type == SDL_QUIT )	leave("");		//handle quitting program
+			if( e.type == SDL_QUIT || e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_ESCAPE ) {
+				leave("");		//handle quitting program
+				return 0;
+			}
 		}
 
 		keystates = SDL_GetKeyboardState(NULL);
@@ -97,8 +98,10 @@ int handleDataIn( void *full_addr ) {
 
 	free((char*)full_addr);
 
-	if( ( server.fd = socket( AF_INET, SOCK_DGRAM, IPPROTO_UDP ) ) < 0 )
+	if( ( server.fd = socket( AF_INET, SOCK_DGRAM, IPPROTO_UDP ) ) < 0 ) {
 		leave("socket");
+		return 0;
+	}
 
 
 	server.events = POLLIN;
@@ -107,6 +110,7 @@ int handleDataIn( void *full_addr ) {
 		if( poll( &server, 1, TIMEOUT ) <= 0 ) {
 			printf("Connection timed out\n");
 			leave("poll");
+			return 0;
 		}
 
 		if( server.revents & POLLIN ) {
@@ -164,7 +168,7 @@ int main( int argc, char **argv ) {
 	SDL_Renderer *renderer = SDL_CreateRenderer( win, -1, SDL_RENDERER_ACCELERATED );
 
 
-	// menuMain( renderer );
+	//menuMain( renderer );
 
 
 	SDL_Texture *texture = SDL_CreateTexture( renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, LEVEL_WIDTH, LEVEL_HEIGHT );
@@ -192,6 +196,8 @@ int main( int argc, char **argv ) {
 
 
 	for(;;) {
+		if( quit ) break;
+
 		for( int i = 0; i < NUM_PIXELS; i++ )
 			level[i] = terrain[i];
 
@@ -217,6 +223,11 @@ int main( int argc, char **argv ) {
 		SDL_RenderPresent( renderer );
 	}
 
+	//wait for everything to quit to avoid dumb SDL errors about program exitting while SDL actions are being performed
+	SDL_Delay( 20 );
 	SDL_DestroyWindow(win); //Destroy window
-	leave("");
+	Mix_Quit(); //Quit SDL_mixer
+	SDL_Quit(); //Quit SDL
+	printf("\n-------------\n Client quit\n-------------\n");
+	return 0;
 }

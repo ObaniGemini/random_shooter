@@ -38,3 +38,4 @@ uint itemSpawn( uint, void * );
 uint playerSpawn( uint, void * );
 void sendData();
 int handleDataIn( void * );
+int handlePing();
