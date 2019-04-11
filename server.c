@@ -216,7 +216,7 @@ int handleDataIn( void *addr ) {
 
 
 int handlePing() {
-	clock_t timers[MAX_PLAYERS];
+	clock_t timer[MAX_PLAYERS];
 	clock_t elapsed;
 
 	for(;;) {
@@ -224,9 +224,10 @@ int handlePing() {
 		for( int i = 0; i < MAX_PLAYERS; i++ ) {
 			if( pt_addr[i] ) {
 				if( ping[i] ) {
-					timers[i] = elapsed;
+					timer[i] = elapsed;
 					ping[i] = 0;
 				} else if( (double)(elapsed - timer[i]) / CLOCKS_PER_SEC >= TIMEOUT/1000 ) {
+					printf(" ----------------\nPlayer %d timed out\n ----------------\n", i+1);
 					pt_addr[i] = NULL;
 				}
 			}
