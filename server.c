@@ -215,27 +215,6 @@ int handleDataIn( void *addr ) {
 
 
 
-int handlePing() {
-	clock_t timer[MAX_PLAYERS];
-	clock_t elapsed;
-
-	for(;;) {
-		elapsed = clock();
-		for( int i = 0; i < MAX_PLAYERS; i++ ) {
-			if( pt_addr[i] ) {
-				if( ping[i] ) {
-					timer[i] = elapsed;
-					ping[i] = 0;
-				} else if( (double)(elapsed - timer[i]) / CLOCKS_PER_SEC >= TIMEOUT/1000 ) {
-					printf(" ----------------\nPlayer %d timed out\n ----------------\n", i+1);
-					pt_addr[i] = NULL;
-				}
-			}
-		}
-	}
-}
-
-
 
 int main( int argc, char **argv ) {
 	if( argc != 2 ) {
@@ -258,6 +237,7 @@ int main( int argc, char **argv ) {
 		error("bind");
 
 
+	clock_t ping_timer[MAX_PLAYERS];
 	clock_t t1 = clock(), t2;
 	for( int i = 0; i < MAX_PLAYERS; i++ ) {
 		pt_addr[i] = NULL;
@@ -270,7 +250,6 @@ int main( int argc, char **argv ) {
 	SDL_Init( SDL_INIT_TIMER );
 	SDL_AddTimer( 15000, itemSpawn, NULL );
 	SDL_CreateThread( handleDataIn, "handleDataIn", (void *)(&sv_addr) );
-	SDL_CreateThread( handlePing, "handlePing", NULL );
 	signal(2, leave);
 
 
@@ -294,6 +273,18 @@ int main( int argc, char **argv ) {
 			updateEnts();
 			updateStates();
 			sendData();
+
+			for( int i = 0; i < MAX_PLAYERS; i++ ) {
+				if( pt_addr[i] ) {
+					if( ping[i] ) {
+						ping_timer[i] = t2;
+						ping[i] = 0;
+					} else if( (double)(t2 - ping_timer[i]) / CLOCKS_PER_SEC >= TIMEOUT/1000 ) {
+						printf(" ----------------\nPlayer %d timed out\n ----------------\n", i+1);
+						pt_addr[i] = NULL;
+					}
+				}
+			}
 		}
 	}
 
