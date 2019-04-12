@@ -10,6 +10,7 @@ struct pollfd server;
 struct sockaddr_in sv_addr;  //addresse
 socklen_t sv_addr_len = sizeof( sv_addr );
 
+uint8_t connected = 0;
 uint8_t quit = 0;
 
 
@@ -18,7 +19,7 @@ void leave(char *str) {
 		perror(str);		//Send error if there's one
 
 	quit = QUIT;
-	sendto( server.fd, &quit, 1, 0, (struct sockaddr *)&sv_addr, sv_addr_len );
+	if( connected ) sendto( server.fd, &quit, 1, 0, (struct sockaddr *)&sv_addr, sv_addr_len );
 	close( server.fd );
 }
 
@@ -84,15 +85,14 @@ int handleInput() {
 int handleDataIn( void *full_addr ) {
 	printf("Attempting connection to %s ...\n", (char *)full_addr);
 	char *tok;
-	int connected = 0;
 
 	memset((char *) &sv_addr, 0, sizeof(sv_addr));
 
-	sv_addr.sin_family		= AF_INET;
+	sv_addr.sin_family = AF_INET;
 	tok = strtok( (char *)full_addr, ":" );
 	sv_addr.sin_addr.s_addr = inet_addr( tok );
 	tok = strtok( NULL, ":" );
-	sv_addr.sin_port		= htons( atoi( tok ) );
+	sv_addr.sin_port = htons( atoi( tok ) );
 
 	memset( sv_addr.sin_zero, 0, sizeof( sv_addr.sin_zero ) );
 
@@ -102,7 +102,6 @@ int handleDataIn( void *full_addr ) {
 		leave("socket");
 		return 0;
 	}
-
 
 	server.events = POLLIN;
 
@@ -147,17 +146,17 @@ int main( int argc, char **argv ) {
 		return 1;
 	}
 
-	char *full_addr = malloc( sizeof( argv[1] ) + sizeof( argv[2] ) + 1 );
 	uint32_t level[NUM_PIXELS];
-	uint32_t pix = 0xaaaaaaaa;
+	uint32_t pix = 0xffffffff;
 	srand(time(NULL));
 
+	/* Combine address and port to pass it to datain thread */
 	int i;
-	for( i = 0; argv[1][i]; i++ )
-		full_addr[i] = argv[1][i];
+	char *full_addr = malloc( sizeof( argv[1] ) + sizeof( argv[2] ) + 1 );
+
+	for( i = 0; argv[1][i]; i++ ) full_addr[i] = argv[1][i];
 	full_addr[i] = ':';
-	for( int j = 0; argv[2][j]; j++ )
-		full_addr[j + i + 1] = argv[2][j];
+	for( int j = 0; argv[2][j]; j++ ) full_addr[j + i + 1] = argv[2][j];
 
 
 	SDL_Init( SDL_INIT_VIDEO | SDL_INIT_TIMER );
@@ -194,6 +193,11 @@ int main( int argc, char **argv ) {
 	const int W1 = LEVEL_WIDTH*PIX_SIZE, W2 = LEVEL_WIDTH*PIX_SIZE + PIX_SIZE*2;
 	const int H1 = LEVEL_HEIGHT*PIX_SIZE;
 
+	const int loadX1 = SCREEN_WIDTH/2 - PIX_SIZE*9, loadX2 = SCREEN_WIDTH/2 - PIX_SIZE, loadX3 = SCREEN_WIDTH/2 + PIX_SIZE*7;
+	const int loadY = SCREEN_HEIGHT/2 - PIX_SIZE;
+	const int loadW = PIX_SIZE*2;
+
+	clock_t elapsed, loadT = clock();
 
 	for(;;) {
 		if( quit ) break;
@@ -204,8 +208,8 @@ int main( int argc, char **argv ) {
 		for( int i = 0; i < MAX_ENTITIES; i++ )
 			if( ents[i].hp )
 				level[(ents[i].x + ents[i].y*LEVEL_WIDTH)] = ( i > MAX_PLAYERS ?
-															 ( 55 + ents[i].hp/2 ) | ( ( 155 + ents[i].hp )  << 8 ) | ( ( 200 + ents[i].hp/2 ) << 16 ) | ( 255 << 24 ) :	//bullets color
-															 ( i == MAX_PLAYERS ? 
+															 ( 55 + ents[i].hp/2 ) | ( ( 175 + (ents[i].hp*2)/3 )  << 8 ) | ( ( 205 + ents[i].hp/2 ) << 16 ) | ( 255 << 24 ) :	//bullets color
+															 ( i == MAX_PLAYERS ?
 															 ( rand() % 256 ) | ( ( rand() % 256 ) << 8 ) | ( ( rand() % 256 ) << 16 ) | ( 255 << 24 )	:	//shotgun color
 															 ( ents[i].hp*25 ) | ( ( ents[i].hp*25 ) << 8 ) | ( 255 << 16 ) | ( 255 << 24 ) ) );		//players color
 
@@ -214,20 +218,27 @@ int main( int argc, char **argv ) {
 			memset( events, 0, 2 );
 		}
 
+
 		SDL_UpdateTexture( texture, NULL, level, pixW );
 		textureUpdate( renderer, texture, X1, Y1, W1, H1 );
-		textureUpdate( renderer, white, X2, Y2, W2, PIX_SIZE );
-		textureUpdate( renderer, white, X2, Y3, W2, PIX_SIZE );
-		textureUpdate( renderer, white, X2, Y1, PIX_SIZE, H1 );
-		textureUpdate( renderer, white, X3, Y1, PIX_SIZE, H1 );
+
+		if( !connected ) { /* Loading screen before connection */
+			elapsed = clock();
+			double diff = (double)( elapsed - loadT ) / CLOCKS_PER_SEC;
+			if( diff >= 0 && diff <= 3 ) textureUpdate( renderer, white, loadX1, loadY, loadW, loadW );
+			if( diff >= 1 && diff <= 4 ) textureUpdate( renderer, white, loadX2, loadY, loadW, loadW );
+			if( diff >= 2 && diff <= 5 ) textureUpdate( renderer, white, loadX3, loadY, loadW, loadW );
+			if( diff >= 6 ) loadT = elapsed;
+		}
+
 		SDL_RenderPresent( renderer );
 	}
 
-	//wait for everything to quit to avoid dumb SDL errors about program exitting while SDL actions are being performed
+	/* wait for everything to quit to avoid dumb SDL errors about program exitting while SDL actions are being performed */
 	SDL_Delay( 20 );
-	SDL_DestroyWindow(win); //Destroy window
-	Mix_Quit(); //Quit SDL_mixer
-	SDL_Quit(); //Quit SDL
+	SDL_DestroyWindow(win); /* Destroy window */
+	Mix_Quit(); 			/* Quit SDL_mixer */
+	SDL_Quit();				/* Quit SDL	      */
 	printf("\n-------------\n Client quit\n-------------\n");
 	return 0;
 }

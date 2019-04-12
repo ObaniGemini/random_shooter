@@ -10,5 +10,5 @@
 
 
 void textureUpdate( SDL_Renderer *, SDL_Texture *, int, int, int, int );
-SDL_Surface *CreateButton( const char *, TTF_Font * ) {
-void menuMain(SDL_Renderer *);
+SDL_Surface *CreateButton( const char *, TTF_Font * );
+void menuMain( SDL_Renderer * );

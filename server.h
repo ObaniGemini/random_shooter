@@ -32,7 +32,7 @@ void applyDir( int );
 void updateEnts();
 void updateStates();
 void playerMove( int, uint8_t );
-void playerShoot( int, uint8_t );
+void playerShoot( int, uint8_t, uint8_t, uint8_t );
 uint itemSpawn( uint, void * );
 uint playerSpawn( uint, void * );
 void sendData();

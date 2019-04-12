@@ -17,13 +17,14 @@ SDL_Surface *CreateButton( const char *text, TTF_Font *fnt ) {
 	SDL_FillRect( button, NULL, SDL_MapRGB(button->format, 75, 75, 75) );
 	SDL_Color white = { 255, 255, 255 };
 	SDL_Surface *label = TTF_RenderText_Solid( fnt, text, white );
+	SDL_Surface *label2 = SDL_ConvertSurface( label, button->format, 0 );
 
 	printrect(&(button->clip_rect));
 	printrect(&(label->clip_rect));
 
 	SDL_BlitSurface( label, NULL, button, NULL );
 	SDL_FreeSurface( label );
-	return button;
+	return label2;
 }
 
 

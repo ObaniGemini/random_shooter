@@ -81,8 +81,18 @@ void updateStates() {
 			if( ents[p].x == ents[b].x && ents[p].y == ents[b].y ) {
 				ents[b].hp = 0;
 				if( b == MAX_PLAYERS ) {
-					printf("Player %d picked up another gun !\n", p+1 );
-					player_states[p] = STATE_SHOTGUN;
+					if( rand() % 3 == 0 ) {
+						for( int y = 0; y < LEVEL_HEIGHT; y += 4 ) {
+							if( y != ents[p].y ) {
+								playerShoot( -1, ents[p].x, y, DIR_LEFT );
+								playerShoot( -1, ents[p].x, y, DIR_RIGHT );
+							}
+						}
+						printf("Player %d called an airstrike !\n", p+1 );
+					} else {
+						printf("Player %d picked up another gun !\n", p+1 );
+						player_states[p] = STATE_SHOTGUN;
+					}
 					SDL_AddTimer( 15000, itemSpawn, NULL );
 				} else {
 					ents[p].hp--;							/* If bullet and player have the same pos, kill bullet and decrement player hp */
@@ -105,25 +115,27 @@ void playerMove( int player, uint8_t dir ) {
 
 
 /* Spawn a bullet on empty location if player shoots */
-void playerShoot( int player, uint8_t dir ) {
+void playerShoot( int player, uint8_t x, uint8_t y, uint8_t dir ) {
 	int shots = 1; /* Useful for powerup */
 
-	if( !ents[player].hp ) return; /* don't shoot if player is dead */
-	if( (dir & DIR_UP && dir & DIR_DOWN) || (dir & DIR_LEFT && dir & DIR_RIGHT)) return; /* don't shoot if opposite directions */
+	if( player != -1 ) {
+		if( !ents[player].hp ) return; /* don't shoot if player is dead */
+		if( (dir & DIR_UP && dir & DIR_DOWN) || (dir & DIR_LEFT && dir & DIR_RIGHT)) return; /* don't shoot if opposite directions */
+	}
 
 	for( int i = MAX_PLAYERS + 1; i < MAX_ENTITIES; i++ ) {
 		if( ents[i].hp ) continue;
 
 		chooseDir( dir, &(ents[i].dirX), &(ents[i].dirY) );
-		if( player_states[player] == STATE_NORMAL ) {
-			ents[i].x = ents[player].x + ents[i].dirX;
-			ents[i].y = ents[player].y + ents[i].dirY;
+		if( player == -1 || player_states[player] == STATE_NORMAL ) {
+			ents[i].x = x + ents[i].dirX;
+			ents[i].y = y + ents[i].dirY;
 		} else if( ents[i].dirX && ents[i].dirY ) {
-			ents[i].x = ents[player].x + ents[i].dirX + shots*ents[i].dirX;
-			ents[i].y = ents[player].y + ents[i].dirY - shots*ents[i].dirY;
+			ents[i].x = x + ents[i].dirX + shots*ents[i].dirX;
+			ents[i].y = y + ents[i].dirY - shots*ents[i].dirY;
 		} else {
-			ents[i].x = ents[player].x + ents[i].dirX + shots*ents[i].dirY;
-			ents[i].y = ents[player].y + ents[i].dirY + shots*ents[i].dirX;
+			ents[i].x = x + ents[i].dirX + shots*ents[i].dirY;
+			ents[i].y = y + ents[i].dirY + shots*ents[i].dirX;
 		}
 
 		ents[i].hp = HP_BULLET;
@@ -265,7 +277,7 @@ int main( int argc, char **argv ) {
 					playerMove(i, events[i*2]);
 					events[i*2] = 0;
 				} else if( events[i*2 + 1] & SHOOT ) {
-					playerShoot(i, events[i*2 + 1]);
+					playerShoot(i, ents[i].x, ents[i].y, events[i*2 + 1]);
 					events[i*2 + 1] = 0;
 				}
 			}
@@ -274,6 +286,7 @@ int main( int argc, char **argv ) {
 			updateStates();
 			sendData();
 
+			/* handle ping timeout */
 			for( int i = 0; i < MAX_PLAYERS; i++ ) {
 				if( pt_addr[i] ) {
 					if( ping[i] ) {

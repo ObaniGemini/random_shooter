@@ -17,9 +17,9 @@
 
 
 #define MAX_PLAYERS		4
-#define MAX_BULLETS		120
+#define MAX_BULLETS		140
 #define MAX_ENTITIES	(MAX_PLAYERS + 1 + MAX_BULLETS)
-#define TIMEOUT 		30000
+#define TIMEOUT 		15000
 
 
 #define HP_BULLET		80
