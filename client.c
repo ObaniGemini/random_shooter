@@ -103,7 +103,11 @@ int handleDataIn( void *full_addr ) {
 		return 0;
 	}
 
-	server.events = POLLIN;
+	{
+		server.events = POLLIN;
+		uint8_t dummy[2] = { };
+		sendto( server.fd, dummy, 2, 0, (struct sockaddr *)&sv_addr, sv_addr_len );
+	}
 
 	for(;;) {
 		if( poll( &server, 1, TIMEOUT ) <= 0 ) {
