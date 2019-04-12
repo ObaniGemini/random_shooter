@@ -1,7 +1,7 @@
 CC=gcc -std=c99
 HEAD=header.h
-FLAGS=-lSDL2 -lm -Wall -Wextra -g
-CFLAGS=-lSDL2_ttf -lSDL2_mixer
+FLAGS=-lSDL2 -Wall -Wextra -g
+CFLAGS=-lSDL2_ttf -lSDL2_mixer -lm
 
 
 

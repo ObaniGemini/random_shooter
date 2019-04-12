@@ -9,4 +9,6 @@
 #define BUTTON_HEIGHT (SCREEN_HEIGHT/8)
 
 
+void textureUpdate( SDL_Renderer *, SDL_Texture *, int, int, int, int );
+SDL_Surface *CreateButton( const char *, TTF_Font * ) {
 void menuMain(SDL_Renderer *);

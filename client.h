@@ -19,4 +19,3 @@ void initGame();
 int randomizeTerrain();
 int handleInput();
 int handleDataIn();
-void textureUpdate( SDL_Renderer *r, SDL_Texture *t, int x, int y, int w, int h );
