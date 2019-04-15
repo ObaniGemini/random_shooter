@@ -30,7 +30,4 @@
 #define DIR_DOWN		0x02
 #define DIR_RIGHT		0x04
 #define DIR_UP			0x08
-#define MOVE			0x10
-#define SHOOT 			0x20
-#define CONNECT			0x40
-#define QUIT			0x80
+#define QUIT			0x10

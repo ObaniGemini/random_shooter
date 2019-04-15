@@ -273,10 +273,10 @@ int main( int argc, char **argv ) {
 			t1 = t2;
 
 			for( int i = 0; i < MAX_PLAYERS; i++ ) {
-				if( events[i*2] & MOVE ) {
+				if( events[i*2] ) {
 					playerMove(i, events[i*2]);
 					events[i*2] = 0;
-				} else if( events[i*2 + 1] & SHOOT ) {
+				} else if( events[i*2 + 1] ) {
 					playerShoot(i, ents[i].x, ents[i].y, events[i*2 + 1]);
 					events[i*2 + 1] = 0;
 				}

@@ -61,16 +61,16 @@ int handleInput() {
 
 		keystates = SDL_GetKeyboardState(NULL);
 
-		if( keystates[SDL_SCANCODE_LEFT] ) 	events[0] |= MOVE | DIR_LEFT;
-		if( keystates[SDL_SCANCODE_DOWN] ) 	events[0] |= MOVE | DIR_DOWN;
-		if( keystates[SDL_SCANCODE_RIGHT] )	events[0] |= MOVE | DIR_RIGHT;
-		if( keystates[SDL_SCANCODE_UP] ) 	events[0] |= MOVE | DIR_UP;
+		if( keystates[SDL_SCANCODE_LEFT] ) 	events[0] |= DIR_LEFT;
+		if( keystates[SDL_SCANCODE_DOWN] ) 	events[0] |= DIR_DOWN;
+		if( keystates[SDL_SCANCODE_RIGHT] )	events[0] |= DIR_RIGHT;
+		if( keystates[SDL_SCANCODE_UP] ) 	events[0] |= DIR_UP;
 
 		if( can_shoot ) {
-			if( keystates[SDL_SCANCODE_S] ) { events[1] |= SHOOT | DIR_LEFT;	can_shoot = 0; }
-			if( keystates[SDL_SCANCODE_D] ) { events[1] |= SHOOT | DIR_DOWN;	can_shoot = 0; }
-			if( keystates[SDL_SCANCODE_F] ) { events[1] |= SHOOT | DIR_RIGHT;	can_shoot = 0; }
-			if( keystates[SDL_SCANCODE_E] ) { events[1] |= SHOOT | DIR_UP;		can_shoot = 0; }
+			if( keystates[SDL_SCANCODE_S] ) { events[1] |= DIR_LEFT;	can_shoot = 0; }
+			if( keystates[SDL_SCANCODE_D] ) { events[1] |= DIR_DOWN;	can_shoot = 0; }
+			if( keystates[SDL_SCANCODE_F] ) { events[1] |= DIR_RIGHT;	can_shoot = 0; }
+			if( keystates[SDL_SCANCODE_E] ) { events[1] |= DIR_UP;		can_shoot = 0; }
 		} else {
 			t2 = clock();
 			if( (double)(t2 - t1) / CLOCKS_PER_SEC >= BULLET_DELAY ) {
