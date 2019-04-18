@@ -215,9 +215,18 @@ int handleDataIn( void *addr ) {
 
 		for( int j = 0; j < len; j++ ) {
 			if( buffer[j] & QUIT ) {
-				printf(" -----------\nPlayer %d quit\n -----------\n", i+1);
-				pt_addr[i] = NULL;
-				ents[i].hp = 0;
+				int k = i+1;
+				printf(" -----------\nPlayer %d quit\n -----------\n", k);
+
+				for( ; k < MAX_PLAYERS; k++ ) {
+					if(pt_addr[k] == NULL)
+						break;
+					cl_addr[k-1] = cl_addr[k];
+					pt_addr[k-1] = &cl_addr[k-1];
+					ents[k-1] = ents[k];
+				}
+				pt_addr[k-1] = NULL;
+				ents[k-1].hp = 0;
 				break;
 			}
 			events[j + i*2] |= buffer[j];
@@ -243,14 +252,14 @@ int main( int argc, char **argv ) {
 	sv_addr.sin_family		= AF_INET;
 	sv_addr.sin_port		= htons( atoi(argv[1]) );
 	sv_addr.sin_addr.s_addr	= htonl(INADDR_ANY);
-	//memset( sv_addr.sin_zero, 0, sizeof( sv_addr.sin_zero ) );
 
 	if( bind( clients, (struct sockaddr *)&sv_addr, sizeof( sv_addr ) ) < 0 )
 		error("bind");
 
 
-	clock_t ping_timer[MAX_PLAYERS];
-	clock_t t1 = clock(), t2;
+	time_t ping_timer[MAX_PLAYERS];
+	time_t elapsed, timeT = clock();
+
 	for( int i = 0; i < MAX_PLAYERS; i++ ) {
 		pt_addr[i] = NULL;
 	}
@@ -267,10 +276,10 @@ int main( int argc, char **argv ) {
 
 	/* Handle real-time */
 	for(;;) {
-		t2 = clock();
+		elapsed = clock();
 
-		if( (double)(t2 - t1) / CLOCKS_PER_SEC >= UPDATE_TIME ) {
-			t1 = t2;
+		if( (double)(elapsed - timeT) / CLOCKS_PER_SEC >= UPDATE_TIME ) {
+			timeT = elapsed;
 
 			for( int i = 0; i < MAX_PLAYERS; i++ ) {
 				if( events[i*2] ) {
@@ -290,9 +299,9 @@ int main( int argc, char **argv ) {
 			for( int i = 0; i < MAX_PLAYERS; i++ ) {
 				if( pt_addr[i] ) {
 					if( ping[i] ) {
-						ping_timer[i] = t2;
+						ping_timer[i] = elapsed;
 						ping[i] = 0;
-					} else if( (double)(t2 - ping_timer[i]) / CLOCKS_PER_SEC >= TIMEOUT/1000 ) {
+					} else if( (double)(elapsed - ping_timer[i]) / CLOCKS_PER_SEC >= TIMEOUT/1000 ) {
 						printf(" ----------------\nPlayer %d timed out\n ----------------\n", i+1);
 						pt_addr[i] = NULL;
 					}

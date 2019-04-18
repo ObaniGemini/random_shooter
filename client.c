@@ -24,6 +24,11 @@ void leave(char *str) {
 }
 
 
+void textureUpdate( SDL_Renderer *r, SDL_Texture *t, int x, int y, int w, int h ) {
+	SDL_Rect rect = { x, y, w, h };
+	SDL_RenderCopy( r, t, NULL, &rect );
+}
+
 
 void initGame() {
 	for( int i = 0; i < MAX_ENTITIES; i++ )
@@ -31,21 +36,10 @@ void initGame() {
 }
 
 
-int randomizeTerrain() {
-	clock_t t1 = clock(), t2;
-	for(;;) {
-		t2 = clock();
-		if( (double)(t2 - t1) / CLOCKS_PER_SEC >= 0.01 ) {
-			t1 = t2;
-			terrain[rand() % NUM_PIXELS] = ( rand() % 50 ) | (( 175 - rand() % 50 ) << 8) | (( rand() % 25 ) << 16) | (255 << 24);
-		}
-	}
-}
-
 
 int handleInput() {
 	SDL_Event e;
-	clock_t t1 = clock(), t2;
+	time_t elapsed, keyT = clock();
 	const uint8_t *keystates = NULL;
 	int can_shoot = 1;
 
@@ -72,9 +66,9 @@ int handleInput() {
 			if( keystates[SDL_SCANCODE_F] ) { events[1] |= DIR_RIGHT;	can_shoot = 0; }
 			if( keystates[SDL_SCANCODE_E] ) { events[1] |= DIR_UP;		can_shoot = 0; }
 		} else {
-			t2 = clock();
-			if( (double)(t2 - t1) / CLOCKS_PER_SEC >= BULLET_DELAY ) {
-				t1 = t2;
+			elapsed = clock();
+			if( (double)(elapsed - keyT) / CLOCKS_PER_SEC >= BULLET_DELAY ) {
+				keyT = elapsed;
 				can_shoot = 1;
 			}
 		}
@@ -126,13 +120,17 @@ int handleDataIn( void *full_addr ) {
 			int len = recvfrom( server.fd, data, MAX_ENTITIES*4, 0, (struct sockaddr *)&sv_addr, &sv_addr_len );
 			for( int i = 0; i < len; i += 4 ) {
 				uint8_t entnum = data[i];
-				/*if( !ents[entnum].hp && data[i+1] ) {
-					if( entnum < MAX_PLAYERS )
-						printf("Player %d spawning\n", entnum+1);
-					else
-						printf("Shooting\n");
-				}*/
+
 				if( ents[entnum].hp != data[i+1] ) {
+					if( entnum < MAX_PLAYERS ) {
+						if( !data[i+1] ) {
+							//printf("Player %d died\n", entnum+1);
+						} else {
+							//printf("Player %d spawning\n", entnum);
+						}
+					} else if( entnum > MAX_PLAYERS ) {
+						//printf("Shooting\n");
+					}
 
 				}
 				ents[entnum].hp = data[i+1];
@@ -187,7 +185,6 @@ int main( int argc, char **argv ) {
 	sendto( server.fd, events, 2, 0, (struct sockaddr *)&sv_addr, sv_addr_len );
 	SDL_CreateThread( handleInput, "handleInput", NULL );
 	SDL_CreateThread( handleDataIn, "handleDataIn", (void *)full_addr );
-	SDL_CreateThread( randomizeTerrain, "randomizeTerrain", NULL );
 
 
 	/* Put them here to have less calculation on each step */
@@ -196,15 +193,21 @@ int main( int argc, char **argv ) {
 	const int Y1 = (SCREEN_HEIGHT - LEVEL_HEIGHT*PIX_SIZE)/2, Y2 = (SCREEN_HEIGHT - LEVEL_HEIGHT*PIX_SIZE)/2 - PIX_SIZE, Y3 = (SCREEN_HEIGHT - LEVEL_HEIGHT*PIX_SIZE)/2 + LEVEL_HEIGHT*PIX_SIZE;
 	const int W1 = LEVEL_WIDTH*PIX_SIZE, W2 = LEVEL_WIDTH*PIX_SIZE + PIX_SIZE*2;
 	const int H1 = LEVEL_HEIGHT*PIX_SIZE;
-
+	
 	const int loadX1 = SCREEN_WIDTH/2 - PIX_SIZE*9, loadX2 = SCREEN_WIDTH/2 - PIX_SIZE, loadX3 = SCREEN_WIDTH/2 + PIX_SIZE*7;
 	const int loadY = SCREEN_HEIGHT/2 - PIX_SIZE;
 	const int loadW = PIX_SIZE*2;
 
-	clock_t elapsed, loadT = clock();
+	time_t elapsed, loadT = clock(), terrainT = clock();
 
 	for(;;) {
 		if( quit ) break;
+
+		elapsed = clock();
+		if( (double)(elapsed - terrainT) / CLOCKS_PER_SEC >= 0.01 ) {
+			terrainT = elapsed;
+			terrain[rand() % NUM_PIXELS] = ( rand() % 50 ) | (( 175 - rand() % 50 ) << 8) | (( rand() % 25 ) << 16) | (255 << 24);
+		}
 
 		for( int i = 0; i < NUM_PIXELS; i++ )
 			level[i] = terrain[i];
@@ -216,6 +219,7 @@ int main( int argc, char **argv ) {
 															 ( i == MAX_PLAYERS ?
 															 ( rand() % 256 ) | ( ( rand() % 256 ) << 8 ) | ( ( rand() % 256 ) << 16 ) | ( 255 << 24 )	:	//shotgun color
 															 ( ents[i].hp*25 ) | ( ( ents[i].hp*25 ) << 8 ) | ( 255 << 16 ) | ( 255 << 24 ) ) );		//players color
+
 
 		if( events[0] || events[1] ) {
 			sendto( server.fd, events, 2, 0, (struct sockaddr *)&sv_addr, sv_addr_len );

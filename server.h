@@ -2,7 +2,7 @@
 #include <string.h>
 #include <signal.h>
 
-#define UPDATE_TIME 	0.015625
+#define UPDATE_TIME 	0.015
 
 enum {
 	STATE_DEAD 		= 1,

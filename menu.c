@@ -1,11 +1,6 @@
 #include "menu.h"
 
 
-void textureUpdate( SDL_Renderer *r, SDL_Texture *t, int x, int y, int w, int h ) {
-	SDL_Rect rect = { x, y, w, h };
-	SDL_RenderCopy( r, t, NULL, &rect );
-}
-
 void printrect( SDL_Rect *rect ) {
 	printf("%d %d %d %d\n", rect->x, rect->y, rect->w, rect->h);
 }
