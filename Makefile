@@ -5,17 +5,17 @@ CFLAGS=-lSDL2_mixer -lm
 
 
 client	:	client.o client.h $(HEAD)
-		$(CC) $(FLAGS) $(CFLAGS) $^ -o $@
+		$(CC) $(FLAGS) $(CFLAGS) $< -o $@
 
 client.o:	client.c
-		$(CC) -c $^
+		$(CC) -c $<
 
 
 server	:	server.o server.h $(HEAD)
-		$(CC) $(FLAGS) $^ -o $@
+		$(CC) $(FLAGS) $< -o $@
 
 server.o:	server.c
-		$(CC) -c $^
+		$(CC) -c $<
 
 clean	:
 		rm -rf *.o *.out client server

@@ -88,8 +88,6 @@ int handleDataIn( void *full_addr ) {
 	tok = strtok( NULL, ":" );
 	sv_addr.sin_port = htons( atoi( tok ) );
 
-	memset( sv_addr.sin_zero, 0, sizeof( sv_addr.sin_zero ) );
-
 	free((char*)full_addr);
 
 	if( ( server.fd = socket( AF_INET, SOCK_DGRAM, IPPROTO_UDP ) ) < 0 ) {
