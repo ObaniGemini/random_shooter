@@ -245,7 +245,7 @@ int handleDataIn( void *addr ) {
 
 int main( int argc, char **argv ) {
 	if( argc != 2 ) {
-		printf("Usage : command <port>\n");
+		printf("Usage : %s <port>\n", argv[0]);
 		return 1;
 	}
 

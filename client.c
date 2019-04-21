@@ -142,7 +142,7 @@ int handleDataIn( void *full_addr ) {
 
 int main( int argc, char **argv ) {
 	if( argc != 3 ) {
-		printf("Usage : command <host> <port>\n");
+		printf("Usage : %s <host_ip> <port>\n", argv[0]);
 		return 1;
 	}
 
