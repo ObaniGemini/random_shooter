@@ -7,7 +7,7 @@
 #define NUM_PIXELS (LEVEL_WIDTH * LEVEL_HEIGHT)
 #define PLAYER_COLOR 0xffffffff
 #define BULLET_COLOR 0xffffd893
-#define BULLET_DELAY 0.16
+#define BULLET_DELAY 0.2
 
 enum {
 	BULLET_SOUND = 0,
