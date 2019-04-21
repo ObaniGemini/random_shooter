@@ -97,8 +97,11 @@ void updateStates() {
 				} else {
 					ents[p].hp--;							/* If bullet and player have the same pos, kill bullet and decrement player hp */
 					if( !ents[p].hp ) {						/* If player is dead, respawn */
+						printf("Player %d died\n", p);
 						player_states[p] = STATE_DEAD;
-						SDL_AddTimer( 5000, playerSpawn, NULL );
+						uint8_t * player = malloc(sizeof(uint8_t));
+						*player = p;
+						SDL_AddTimer( 5000, playerSpawn, player );
 					}
 				}
 			}
@@ -162,14 +165,15 @@ uint itemSpawn( uint id, void *data ) { /* These arguments are useless, needed f
 
 /* Spawn player */
 uint playerSpawn( uint id, void *data ) { /* These arguments are useless, needed for the SDL_Timer callback */
-	for( int i = 0; i < MAX_PLAYERS; i++ ) {
-		if( player_states[i] != STATE_DEAD ) continue;
+	uint8_t i = *((uint8_t *)data);
 
-		ents[i].x = rand() % LEVEL_WIDTH;
-		ents[i].y = rand() % LEVEL_HEIGHT;
-		ents[i].hp = HP_PLAYER;
-		player_states[i] = STATE_NORMAL;
-	}
+	printf("Player %d respawned\n", i);
+	ents[i].x = rand() % LEVEL_WIDTH;
+	ents[i].y = rand() % LEVEL_HEIGHT;
+	ents[i].hp = HP_PLAYER;
+	player_states[i] = STATE_NORMAL;
+	free((uint8_t *)data);
+
 	return 0;
 }
 
@@ -205,7 +209,9 @@ int handleDataIn( void *addr ) {
 				cl_addr[i] = tmp;
 				pt_addr[i] = &cl_addr[i];
 				player_states[i] = STATE_DEAD;
-				playerSpawn( 0, NULL );
+				uint8_t * player = malloc(sizeof(uint8_t));
+				*player = i;
+				playerSpawn( 0, player );
 				break;
 			} else if( tmp.sin_addr.s_addr == cl_addr[i].sin_addr.s_addr )
 				break;
