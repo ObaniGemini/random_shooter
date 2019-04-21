@@ -158,6 +158,7 @@ uint itemSpawn( uint id, void *data ) { /* These arguments are useless, needed f
 	ents[MAX_PLAYERS].x = rand() % LEVEL_WIDTH;
 	ents[MAX_PLAYERS].y = rand() % LEVEL_HEIGHT;
 	ents[MAX_PLAYERS].hp = 1;
+	printf("Powerup spawned\n");
 
 	return 0;
 }
