@@ -14,6 +14,23 @@ uint8_t connected = 0;
 uint8_t quit = 0;
 
 
+
+void textureUpdate( SDL_Renderer *r, SDL_Texture *t, int x, int y, int w, int h ) {
+	SDL_Rect rect = { x, y, w, h };
+	SDL_RenderCopy( r, t, NULL, &rect );
+}
+
+
+void playSound( sample *samples, int index ) {
+	for( int i = 0; i < 10; i++ ) {
+		if(!Mix_Playing(i)) {
+			Mix_PlayChannel( i, samples[index], 0 );
+			break;
+		}
+	}
+}
+
+
 void leave(char *str) {
 	if( str[0] )
 		perror(str);		//Send error if there's one
@@ -24,17 +41,10 @@ void leave(char *str) {
 }
 
 
-void textureUpdate( SDL_Renderer *r, SDL_Texture *t, int x, int y, int w, int h ) {
-	SDL_Rect rect = { x, y, w, h };
-	SDL_RenderCopy( r, t, NULL, &rect );
-}
-
-
 void initGame() {
 	for( int i = 0; i < MAX_ENTITIES; i++ )
 		ents[i].hp = 0;
 }
-
 
 
 int handleInput() {
@@ -95,6 +105,21 @@ int handleDataIn( void *full_addr ) {
 		return 0;
 	}
 
+	sample samples[12];
+	samples[0] = Mix_LoadWAV("sfx/bullet1.ogg");
+	samples[1] = Mix_LoadWAV("sfx/bullet2.ogg");
+	samples[2] = Mix_LoadWAV("sfx/bullet3.ogg");
+	samples[3] = Mix_LoadWAV("sfx/bullet4.ogg");
+	samples[4] = Mix_LoadWAV("sfx/bullet5.ogg");
+	samples[5] = Mix_LoadWAV("sfx/damage1.ogg");
+	samples[6] = Mix_LoadWAV("sfx/damage2.ogg");
+	samples[7] = Mix_LoadWAV("sfx/damage3.ogg");
+	samples[8] = Mix_LoadWAV("sfx/death.ogg");
+	samples[9] = Mix_LoadWAV("sfx/powerup1.ogg");
+	samples[10] = Mix_LoadWAV("sfx/powerup2.ogg");
+	samples[11] = Mix_LoadWAV("sfx/spawn.ogg");
+
+
 	{
 		server.events = POLLIN;
 		uint8_t dummy[2] = { };
@@ -120,16 +145,14 @@ int handleDataIn( void *full_addr ) {
 				uint8_t entnum = data[i];
 
 				if( ents[entnum].hp != data[i+1] ) {
-					if( entnum < MAX_PLAYERS ) {
-						if( !data[i+1] ) {
-							//printf("Player %d died\n", entnum+1);
-						} else {
-							//printf("Player %d spawning\n", entnum);
+					if( entnum <= MAX_PLAYERS ) {
+						if( data[i+1] > ents[entnum].hp ) playSound( samples, SPAWN_SOUND );
+						else if( !data[i+1] ) {
+							if( entnum == MAX_PLAYERS ) playSound( samples, POWERUP_SOUND + rand() % 2 );
+							else playSound( samples, DEATH_SOUND );
 						}
-					} else if( entnum > MAX_PLAYERS ) {
-						//printf("Shooting\n");
-					}
-
+						else if( entnum != MAX_PLAYERS ) playSound( samples, DAMAGE_SOUND + rand() % 3 );
+					} else if( !ents[entnum].hp ) playSound( samples, BULLET_SOUND + rand() % 5);
 				}
 				ents[entnum].hp = data[i+1];
 				ents[entnum].x = data[i+2];
@@ -161,6 +184,10 @@ int main( int argc, char **argv ) {
 
 	SDL_Init( SDL_INIT_VIDEO | SDL_INIT_TIMER );
 	Mix_Init( MIX_INIT_OGG );
+	Mix_OpenAudio( 44100, AUDIO_S16LSB, 2, 1024 );
+	Mix_AllocateChannels( 10 );
+
+	Mix_Music * music = Mix_LoadMUS("sfx/ShooterMusic.ogg");
 
 
 	SDL_Window *win = SDL_CreateWindow( "Shooter", 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0 );
@@ -198,8 +225,13 @@ int main( int argc, char **argv ) {
 
 	time_t elapsed, loadT = clock(), terrainT = clock();
 
+	Mix_PlayMusic( music, -1 );
+
 	for(;;) {
-		if( quit ) break;
+		if( quit ) {
+			Mix_FadeOutMusic( 20 );
+			break;
+		}
 
 		elapsed = clock();
 		if( (double)(elapsed - terrainT) / CLOCKS_PER_SEC >= 0.01 ) {
@@ -241,6 +273,7 @@ int main( int argc, char **argv ) {
 	}
 
 	/* wait for everything to quit to avoid dumb SDL errors about program exitting while SDL actions are being performed */
+	Mix_FreeMusic(music);
 	SDL_Delay( 20 );
 	SDL_DestroyWindow(win); /* Destroy window */
 	Mix_Quit(); 			/* Quit SDL_mixer */

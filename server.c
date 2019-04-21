@@ -97,7 +97,7 @@ void updateStates() {
 				} else {
 					ents[p].hp--;							/* If bullet and player have the same pos, kill bullet and decrement player hp */
 					if( !ents[p].hp ) {						/* If player is dead, respawn */
-						printf("Player %d died\n", p);
+						printf("Player %d died\n", p+1);
 						player_states[p] = STATE_DEAD;
 						uint8_t * player = malloc(sizeof(uint8_t));
 						*player = p;
@@ -167,7 +167,7 @@ uint itemSpawn( uint id, void *data ) { /* These arguments are useless, needed f
 uint playerSpawn( uint id, void *data ) { /* These arguments are useless, needed for the SDL_Timer callback */
 	uint8_t i = *((uint8_t *)data);
 
-	printf("Player %d respawned\n", i);
+	printf("Player %d respawned\n", i+1);
 	ents[i].x = rand() % LEVEL_WIDTH;
 	ents[i].y = rand() % LEVEL_HEIGHT;
 	ents[i].hp = HP_PLAYER;

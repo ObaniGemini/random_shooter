@@ -9,13 +9,24 @@
 #define BULLET_COLOR 0xffffd893
 #define BULLET_DELAY 0.16
 
+enum {
+	BULLET_SOUND = 0,
+	DAMAGE_SOUND = 5,
+	DEATH_SOUND = 8,
+	POWERUP_SOUND = 9,
+	SPAWN_SOUND = 11
+};
+
+typedef Mix_Chunk * sample;
+
 typedef struct {
 	uint8_t x, y, hp;
 } Entity;
 
 
-void leave( char * );
 void textureUpdate( SDL_Renderer *, SDL_Texture *, int, int, int, int );
+void playSound( sample *, int );
+void leave( char * );
 void initGame();
 int handleInput();
 int handleDataIn();
